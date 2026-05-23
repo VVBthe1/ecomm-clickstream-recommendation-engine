@@ -1,0 +1,13 @@
+event_time,event_type,product_id,category_id,category_code,brand,price,user_id,user_session
+2019-10-01 10:00:00 UTC,view,100,1,electronics.phone,samsung,299.0,1,sess-a
+2019-10-01 10:05:00 UTC,cart,100,1,electronics.phone,samsung,299.0,1,sess-a
+2019-10-01 10:10:00 UTC,purchase,100,1,electronics.phone,samsung,299.0,1,sess-a
+2019-10-01 11:00:00 UTC,view,100,1,electronics.phone,samsung,299.0,2,sess-b
+2019-10-01 11:05:00 UTC,view,200,2,food.snacks,,5.0,2,sess-b
+2019-10-02 09:00:00 UTC,view,200,2,food.snacks,,5.0,3,sess-c
+2019-10-02 09:30:00 UTC,cart,200,2,food.snacks,,5.0,3,sess-c
+2019-10-02 10:00:00 UTC,purchase,200,2,food.snacks,,5.0,3,sess-c
+2019-10-02 12:00:00 UTC,remove_from_cart,100,1,electronics.phone,samsung,299.0,1,sess-d
+bad-time,view,100,1,electronics.phone,samsung,299.0,4,sess-e
+2019-10-03 08:00:00 UTC,invalid_type,100,1,electronics.phone,samsung,299.0,5,sess-f
+2019-10-03 09:00:00 UTC,view,100,1,electronics.phone,samsung,299.0,1,sess-a

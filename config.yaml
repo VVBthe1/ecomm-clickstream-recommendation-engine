@@ -1,0 +1,20 @@
+dataset:
+  kaggle_slug: mkechinov/ecommerce-behavior-data-from-multi-category-store
+  bronze_file: "2019-Oct.csv"
+  chunk_size: 500000
+  max_chunks: null
+
+paths:
+  bronze_dir: data/bronze
+  silver_dir: data/silver/events
+  gold_dir: data/gold
+  metadata_dir: metadata
+  figures_dir: metadata/figures
+
+processing:
+  valid_event_types:
+    - view
+    - cart
+    - remove_from_cart
+    - purchase
+  rolling_window_days: 7
