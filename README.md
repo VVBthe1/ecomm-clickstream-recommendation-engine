@@ -1,6 +1,6 @@
 # Clickstream demand analytics
 
-Batch pipeline for e-commerce event data: clean clickstream, build features, then (separately) train models and expose results via API. Layout follows **bronze → silver → gold**.
+Batch pipeline for e-commerce clickstream: clean events, build features, forecast **next-day product demand**. Layout: **bronze → silver → gold**.
 
 | Layer | Folder | Contents |
 |-------|--------|----------|
@@ -21,16 +21,24 @@ cp .env.example .env    # Kaggle API key
 make download   # Kaggle → data/bronze
 make clean      # bronze → silver (cleaned events)
 make explore    # summaries and charts → metadata/
-make features   # silver → gold (product tables)
+make features   # silver → gold (product_summary, product_by_day)
+make train      # gold → models + metadata/model_results.json
 ```
 
-Or `make all` for the full chain. `make dry-run` processes two chunks only (handy for a quick check). `make test` runs unit tests.
+Or `make all` for the full chain including training. `make dry-run` processes two chunks only (handy for a quick check). `make test` runs unit tests.
 
 ## Outputs
 
 - `data/gold/product_summary.parquet` — per product
 - `data/gold/product_by_day.parquet` — per product per day (`purchases_next_day` is the forecast target)
+- `metadata/model_results.json` — MAE, RMSE, MAPE, R² by model
+- `data/models/` — fitted baselines and ML models
 
-More detail: `docs/data_layers.md`, `docs/prediction_problem.md`.
+## Documentation
+
+| Location | Purpose |
+|----------|---------|
+| [`docs/`](docs/) | Report sources committed to Git (see [`docs/README.md`](docs/README.md)) |
+| [`workspace/`](workspace/) | Personal WIP — verification workbooks, plans, report drafts (gitignored) |
 
 **Data:** [Kaggle eCommerce behavior](https://www.kaggle.com/datasets/mkechinov/ecommerce-behavior-data-from-multi-category-store) — `2019-Oct.csv` in config.

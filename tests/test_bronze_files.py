@@ -15,6 +15,22 @@ def test_extract_csv_zip(tmp_path: Path):
     assert out.read_text().startswith("event_time")
 
 
+def test_resolve_bronze_csv_when_csv_is_zip(tmp_path: Path):
+    bronze = tmp_path / "bronze"
+    bronze.mkdir()
+    inner = bronze / "inner.csv"
+    inner.write_text("event_time,event_type\n2019-10-01 00:00:00 UTC,view\n")
+    masquerade = bronze / "2019-Oct.csv"
+    with zipfile.ZipFile(masquerade, "w") as zf:
+        zf.write(inner, arcname="2019-Oct.csv")
+    inner.unlink()
+
+    path = resolve_bronze_csv(bronze, "2019-Oct.csv")
+    assert path.name == "2019-Oct.csv"
+    assert path.read_text().startswith("event_time")
+    assert not zipfile.is_zipfile(path)
+
+
 def test_resolve_bronze_csv_from_zip(tmp_path: Path):
     bronze = tmp_path / "bronze"
     bronze.mkdir()

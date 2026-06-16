@@ -7,7 +7,11 @@ from pathlib import Path
 def extract_csv_zip(zip_path: Path, dest_csv: Path) -> Path:
     zip_path = Path(zip_path)
     dest_csv = Path(dest_csv)
-    if dest_csv.exists() and dest_csv.stat().st_mtime >= zip_path.stat().st_mtime:
+    if (
+        dest_csv.exists()
+        and not zipfile.is_zipfile(dest_csv)
+        and dest_csv.stat().st_mtime >= zip_path.stat().st_mtime
+    ):
         return dest_csv
 
     with zipfile.ZipFile(zip_path, "r") as zf:
@@ -34,6 +38,15 @@ def extract_csv_zip(zip_path: Path, dest_csv: Path) -> Path:
 def resolve_bronze_csv(bronze_dir: Path, bronze_file: str) -> Path:
     bronze_dir = Path(bronze_dir)
     csv_path = bronze_dir / bronze_file
+    if csv_path.is_file() and zipfile.is_zipfile(csv_path):
+        # Kaggle often saves a zip archive as "<name>.csv" without extracting.
+        zip_path = bronze_dir / f"{bronze_file}.zip"
+        if not zip_path.exists():
+            csv_path.rename(zip_path)
+        elif csv_path.resolve() != zip_path.resolve():
+            csv_path.unlink()
+        return extract_csv_zip(zip_path, csv_path)
+
     if csv_path.is_file():
         return csv_path
 

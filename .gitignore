@@ -7,7 +7,13 @@ __pycache__/
 
 data/
 metadata/
-models/
-results/
+data/models/
 
 .DS_Store
+
+# Personal / WIP — not published with the repo
+workspace/
+
+# AI assistant config (local only)
+CLAUDE.md
+.claude/

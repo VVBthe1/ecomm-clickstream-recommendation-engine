@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -21,7 +22,7 @@ def main() -> None:
     slug = cfg["dataset"]["kaggle_slug"]
     dest_csv = bronze_dir / bronze_file
 
-    if dest_csv.exists():
+    if dest_csv.exists() and not zipfile.is_zipfile(dest_csv):
         _log_ok(cfg, dest_csv)
         return
 

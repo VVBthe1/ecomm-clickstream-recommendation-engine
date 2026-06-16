@@ -1,4 +1,4 @@
-.PHONY: help venv install download clean explore features all test dry-run
+.PHONY: help venv install download clean explore features train all test dry-run
 
 PYTHON ?= python3
 VENV := .venv
@@ -10,6 +10,7 @@ help:
 	@echo "make clean     bronze -> silver"
 	@echo "make explore   EDA -> metadata/"
 	@echo "make features  silver -> gold"
+	@echo "make train     gold -> models + metrics"
 	@echo "make all       full pipeline"
 	@echo "make dry-run   clean (2 chunks)"
 	@echo "make test      pytest"
@@ -33,7 +34,10 @@ explore:
 features:
 	$(BIN)/python scripts/build_features.py
 
-all: download clean explore features
+train:
+	$(BIN)/python scripts/train_models.py
+
+all: download clean explore features train
 
 test:
 	$(BIN)/pytest -q
