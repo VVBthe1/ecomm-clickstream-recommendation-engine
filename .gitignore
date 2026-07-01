@@ -17,3 +17,23 @@ workspace/
 # AI assistant config (local only)
 CLAUDE.md
 .claude/
+
+# Draft LLD figure sources (use committed docs/figures/*.md instead)
+docs/figures/lld_*.md
+
+# Report / presentation tooling — belongs in workspace/tools/ only
+scripts/build_presentation.py
+scripts/build_report_docx.py
+scripts/make_reference_docx.py
+scripts/preprocess_for_docx.py
+scripts/render_report_figures.py
+
+# Generated submission documents (Word, PowerPoint, PDF)
+*.docx
+*.pptx
+*.pdf
+~$*
+
+# Office / editor temp files
+*.swp
+*~

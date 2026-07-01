@@ -120,8 +120,10 @@ def build_product_by_day(df: pd.DataFrame, window: int = 7) -> pd.DataFrame:
 
     daily = daily.sort_values(["product_id", "date"])
     g = daily.groupby("product_id", group_keys=False)
+    # lead(1): target is next-day purchases — forward shift within each product series
     daily["purchases_next_day"] = g["purchases"].shift(-1)
 
+    # rolling aggregates: past N days of behaviour — no future data, no leakage
     for col in ["views", "carts", "purchases"]:
         daily[f"{col}_{window}d"] = (
             g[col].transform(lambda s: s.rolling(window, min_periods=1).sum())

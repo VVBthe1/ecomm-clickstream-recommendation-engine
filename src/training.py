@@ -69,7 +69,9 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float |
 def add_baseline_predictions(df: pd.DataFrame) -> pd.DataFrame:
     out = df.sort_values(["product_id", "date"]).copy()
     g = out.groupby("product_id", group_keys=False)
+    # lag(1): predict using yesterday's purchases
     out["pred_lag1"] = g["purchases"].shift(1)
+    # lag(1) then 7-day rolling mean: predict using average of prior 7 days
     out["pred_ma7"] = g["purchases"].transform(
         lambda s: s.shift(1).rolling(7, min_periods=1).mean()
     )

@@ -4,33 +4,29 @@ Use in Methodology chapter. Export to PNG via Mermaid Live or VS Code extension.
 
 ```mermaid
 flowchart TB
-  subgraph sources [Data sources]
-    Kaggle[Kaggle REES46 Oct CSV]
+  subgraph sources [Data source]
+    Kaggle[Kaggle REES46 October clickstream]
   end
-  subgraph bronze [Bronze raw store]
-    Raw[data/bronze/2019-Oct.csv]
+  subgraph bronze [Bronze layer]
+    Raw[Raw events archive]
   end
-  subgraph processing [Processing engine]
-    Clean[scripts/clean.py]
-    Silver[data/silver/events Parquet]
+  subgraph silver [Silver layer]
+    Clean[Clean and validate]
+    Events[Events partitioned by date]
   end
-  subgraph features [Feature store gold]
-    Build[scripts/build_features.py]
-    Summary[product_summary.parquet]
-    Daily[product_by_day.parquet]
+  subgraph gold [Gold layer]
+    Summary[Product summary table]
+    Daily[Product-by-day features]
   end
-  subgraph prediction [Prediction engine]
-    Train[scripts/train_models.py]
-    Models[data/models/]
-    Results[metadata/model_results.json]
+  subgraph ml [Modelling layer]
+    Train[Train models]
+    Eval[Evaluation metrics]
   end
   Kaggle --> Raw
-  Raw --> Clean --> Silver
-  Silver --> Build
-  Build --> Summary
-  Build --> Daily
-  Daily --> Train --> Models
-  Train --> Results
+  Raw --> Clean --> Events
+  Events --> Summary
+  Events --> Daily
+  Daily --> Train --> Eval
 ```
 
 **Caption:** Batch architecture — raw clickstream → cleaned events → product-day features → model training and evaluation. API and real-time workers are out of scope.

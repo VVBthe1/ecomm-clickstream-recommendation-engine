@@ -1,22 +1,20 @@
 # Figure: End-to-end workflow
 
-Maps to Makefile targets.
-
 ```mermaid
 flowchart LR
-  A[make download] --> B[make clean]
-  B --> C[make explore]
-  C --> D[make features]
-  D --> E[make train]
+  A[Download] --> B[Clean]
+  B --> C[Explore]
+  C --> D[Build features]
+  D --> E[Train models]
   E --> F[Report results]
 ```
 
-| Step | Script | Output |
-|------|--------|--------|
-| download | `scripts/download.py` | `data/bronze/` |
-| clean | `scripts/clean.py` | `data/silver/events/` |
-| explore | `scripts/explore.py` | `metadata/eda_summary.json`, figures |
-| features | `scripts/build_features.py` | `data/gold/*.parquet` |
-| train | `scripts/train_models.py` | `metadata/model_results.json`, `data/models/` |
+| Step | Purpose | Output |
+|------|---------|--------|
+| Download | Ingest October clickstream | Bronze raw data |
+| Clean | Validate and partition events | Silver cleaned events |
+| Explore | EDA summaries and charts | Activity and funnel insights |
+| Build features | Product-day aggregation | Gold feature tables |
+| Train | Baselines + tree models | Metrics and model artifacts |
 
-**Caption:** Pipeline stages and artifacts produced at each step.
+**Caption:** Pipeline stages and outputs at each step.
