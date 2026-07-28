@@ -4,6 +4,7 @@ import pandas as pd
 from src.training import (
     add_baseline_predictions,
     compute_metrics,
+    date_boundary_split,
     historical_mean_predictions,
     time_based_split,
 )
@@ -65,6 +66,28 @@ def test_add_baseline_predictions_lag1():
         }
     )
     out = add_baseline_predictions(df)
-    assert pd.isna(out["pred_lag1"].iloc[0])
-    assert out["pred_lag1"].iloc[1] == 1
-    assert out["pred_ma7"].iloc[2] == 2.0
+    # Lag-1 = today's purchases (Eq. 6.3)
+    assert out["pred_lag1"].tolist() == [1, 3, 5]
+    # MA7 through today: day3 mean of [1, 3, 5] = 3.0
+    assert out["pred_ma7"].iloc[2] == 3.0
+
+
+def test_date_boundary_split():
+    dates = pd.date_range("2019-10-01", periods=60, freq="D", tz="UTC")
+    df = pd.DataFrame(
+        {
+            "product_id": 1,
+            "date": dates,
+            "purchases": 1,
+            "purchases_next_day": 1,
+        }
+    )
+    split = date_boundary_split(
+        df,
+        train_end="2019-11-15",
+        test_start="2019-11-16",
+        test_days=14,
+    )
+    assert len(split.test_dates) == 14
+    assert split.train["date"].max() <= pd.Timestamp("2019-11-15", tz="UTC")
+    assert split.test["date"].min() >= pd.Timestamp("2019-11-16", tz="UTC")

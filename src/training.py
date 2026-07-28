@@ -69,13 +69,44 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float |
 def add_baseline_predictions(df: pd.DataFrame) -> pd.DataFrame:
     out = df.sort_values(["product_id", "date"]).copy()
     g = out.groupby("product_id", group_keys=False)
-    # lag(1): predict using yesterday's purchases
-    out["pred_lag1"] = g["purchases"].shift(1)
-    # lag(1) then 7-day rolling mean: predict using average of prior 7 days
+    # Lag-1 (Eq. 6.3): tomorrow ≈ today's purchases on the same row
+    out["pred_lag1"] = out["purchases"]
+    # 7-day MA through today (Eq. 6.4): rolling mean of same-day purchases
     out["pred_ma7"] = g["purchases"].transform(
-        lambda s: s.shift(1).rolling(7, min_periods=1).mean()
+        lambda s: s.rolling(7, min_periods=1).mean()
     )
     return out
+
+
+def date_boundary_split(
+    df: pd.DataFrame,
+    train_end: str,
+    test_start: str,
+    test_days: int,
+    date_col: str = "date",
+) -> SplitResult:
+    """Split by explicit date boundaries (strict temporal order, no leakage)."""
+    work = df.copy()
+    work[date_col] = pd.to_datetime(work[date_col], utc=True)
+    train_end_ts = pd.Timestamp(train_end, tz="UTC")
+    test_start_ts = pd.Timestamp(test_start, tz="UTC")
+    unique_dates = sorted(work[date_col].unique())
+    test_dates = [d for d in unique_dates if d >= test_start_ts][:test_days]
+    if len(test_dates) < test_days:
+        raise ValueError(
+            f"Need {test_days} test dates from {test_start}; got {len(test_dates)}"
+        )
+    train_dates = [d for d in unique_dates if d <= train_end_ts]
+    if not train_dates:
+        raise ValueError(f"No train dates on or before {train_end}")
+    train = work[work[date_col].isin(train_dates)].copy()
+    test = work[work[date_col].isin(test_dates)].copy()
+    return SplitResult(
+        train=train,
+        test=test,
+        train_dates=[str(d) for d in train_dates],
+        test_dates=[str(d) for d in test_dates],
+    )
 
 
 def historical_mean_predictions(
@@ -107,14 +138,20 @@ def fit_random_forest(
     x_train: pd.DataFrame,
     y_train: pd.Series,
     random_state: int = 42,
+    params: dict[str, Any] | None = None,
 ) -> RandomForestRegressor:
-    model = RandomForestRegressor(
-        n_estimators=100,
-        max_depth=12,
-        min_samples_leaf=5,
-        n_jobs=-1,
-        random_state=random_state,
-    )
+    defaults: dict[str, Any] = {
+        "n_estimators": 100,
+        "max_depth": 12,
+        "min_samples_leaf": 5,
+        "n_jobs": -1,
+        "random_state": random_state,
+    }
+    if params:
+        defaults.update(params)
+        defaults["n_jobs"] = -1
+        defaults["random_state"] = random_state
+    model = RandomForestRegressor(**defaults)
     model.fit(x_train, y_train)
     return model
 
@@ -123,19 +160,26 @@ def fit_xgboost(
     x_train: pd.DataFrame,
     y_train: pd.Series,
     random_state: int = 42,
+    params: dict[str, Any] | None = None,
 ) -> Any:
     if xgb is None:
         raise ImportError("xgboost is not installed")
-    model = xgb.XGBRegressor(
-        n_estimators=200,
-        max_depth=8,
-        learning_rate=0.1,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        objective="reg:squarederror",
-        n_jobs=-1,
-        random_state=random_state,
-    )
+    defaults: dict[str, Any] = {
+        "n_estimators": 200,
+        "max_depth": 8,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "objective": "reg:squarederror",
+        "n_jobs": -1,
+        "random_state": random_state,
+    }
+    if params:
+        defaults.update(params)
+        defaults["n_jobs"] = -1
+        defaults["random_state"] = random_state
+        defaults["objective"] = "reg:squarederror"
+    model = xgb.XGBRegressor(**defaults)
     model.fit(x_train, y_train)
     return model
 
@@ -144,19 +188,26 @@ def fit_lightgbm(
     x_train: pd.DataFrame,
     y_train: pd.Series,
     random_state: int = 42,
+    params: dict[str, Any] | None = None,
 ) -> Any:
     if lgb is None:
         raise ImportError("lightgbm is not installed")
-    model = lgb.LGBMRegressor(
-        n_estimators=200,
-        max_depth=8,
-        learning_rate=0.1,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        n_jobs=-1,
-        random_state=random_state,
-        verbose=-1,
-    )
+    defaults: dict[str, Any] = {
+        "n_estimators": 200,
+        "max_depth": 8,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "n_jobs": -1,
+        "random_state": random_state,
+        "verbose": -1,
+    }
+    if params:
+        defaults.update(params)
+        defaults["n_jobs"] = -1
+        defaults["random_state"] = random_state
+        defaults["verbose"] = -1
+    model = lgb.LGBMRegressor(**defaults)
     model.fit(x_train, y_train)
     return model
 
@@ -166,6 +217,7 @@ def evaluate_all_models(
     test: pd.DataFrame,
     feature_columns: list[str],
     target: str,
+    model_params: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict[str, dict[str, float | None]], dict[str, Any]]:
     train = train.dropna(subset=[target])
     test = test.dropna(subset=[target])
@@ -173,6 +225,7 @@ def evaluate_all_models(
     y_train = train[target]
     x_test = test[feature_columns]
     y_test = test[target].to_numpy()
+    params = model_params or {}
 
     metrics: dict[str, dict[str, float | None]] = {}
     fitted: dict[str, Any] = {}
@@ -189,15 +242,15 @@ def evaluate_all_models(
         "product_means": train.groupby("product_id")["purchases"].mean().to_dict(),
     }
 
-    rf = fit_random_forest(x_train, y_train)
+    rf = fit_random_forest(x_train, y_train, params=params.get("random_forest"))
     metrics["random_forest"] = compute_metrics(y_test, rf.predict(x_test))
     fitted["random_forest"] = rf
 
-    xgb_model = fit_xgboost(x_train, y_train)
+    xgb_model = fit_xgboost(x_train, y_train, params=params.get("xgboost"))
     metrics["xgboost"] = compute_metrics(y_test, xgb_model.predict(x_test))
     fitted["xgboost"] = xgb_model
 
-    lgb_model = fit_lightgbm(x_train, y_train)
+    lgb_model = fit_lightgbm(x_train, y_train, params=params.get("lightgbm"))
     metrics["lightgbm"] = compute_metrics(y_test, lgb_model.predict(x_test))
     fitted["lightgbm"] = lgb_model
 

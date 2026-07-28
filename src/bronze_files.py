@@ -4,6 +4,20 @@ import zipfile
 from pathlib import Path
 
 
+def assert_valid_zip(zip_path: Path) -> None:
+    """Raise clearly if path is missing, empty, or not a readable zip (e.g. truncated download)."""
+    zip_path = Path(zip_path)
+    if not zip_path.is_file():
+        raise FileNotFoundError(f"Zip not found: {zip_path}")
+    if zip_path.stat().st_size == 0:
+        raise zipfile.BadZipFile(f"Empty zip (re-download): {zip_path}")
+    if not zipfile.is_zipfile(zip_path):
+        raise zipfile.BadZipFile(
+            f"Not a valid zip (incomplete/corrupt download?): {zip_path} "
+            f"({zip_path.stat().st_size} bytes). Delete it and re-run download."
+        )
+
+
 def extract_csv_zip(zip_path: Path, dest_csv: Path) -> Path:
     zip_path = Path(zip_path)
     dest_csv = Path(dest_csv)
@@ -14,6 +28,7 @@ def extract_csv_zip(zip_path: Path, dest_csv: Path) -> Path:
     ):
         return dest_csv
 
+    assert_valid_zip(zip_path)
     with zipfile.ZipFile(zip_path, "r") as zf:
         csv_members = [
             n for n in zf.namelist()
@@ -59,3 +74,12 @@ def resolve_bronze_csv(bronze_dir: Path, bronze_file: str) -> Path:
         return extract_csv_zip(zips[0], csv_path)
 
     raise FileNotFoundError(f"No bronze data in {bronze_dir}. Run: make download")
+
+
+def resolve_bronze_csvs(bronze_dir: Path, cfg_dataset: dict) -> list[Path]:
+    """Resolve one or more bronze CSVs from config (bronze_files or bronze_file)."""
+    bronze_dir = Path(bronze_dir)
+    files = cfg_dataset.get("bronze_files")
+    if not files:
+        files = [cfg_dataset["bronze_file"]]
+    return [resolve_bronze_csv(bronze_dir, name) for name in files]

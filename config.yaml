@@ -1,5 +1,9 @@
 dataset:
   kaggle_slug: mkechinov/ecommerce-behavior-data-from-multi-category-store
+  bronze_files:
+  - 2019-Oct.csv
+  - 2019-Nov.csv
+  # backward-compatible single-file fallback (used if bronze_files absent)
   bronze_file: 2019-Oct.csv
   chunk_size: 500000
   max_chunks: null
@@ -31,7 +35,21 @@ training:
   test_days: 7
   models_dir: data/models
   results_file: metadata/model_results.json
+  experiment_e2:
+    train_end: "2019-10-30"
+    test_start: "2019-11-01"
+    test_days: 7
+    results_file: metadata/generalization_results.json
+  experiment_final:
+    train_end: "2019-11-15"
+    test_start: "2019-11-16"
+    test_days: 14
+    results_file: metadata/final_results.json
   shap:
     enabled: true
     sample_rows: 5000
-    model: xgboost
+    model: random_forest
+  tune:
+    n_iter: 12
+    cv_splits: 3
+    results_file: metadata/best_params.json

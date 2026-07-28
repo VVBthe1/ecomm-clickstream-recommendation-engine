@@ -28,6 +28,8 @@ scripts/make_reference_docx.py
 scripts/preprocess_for_docx.py
 scripts/render_report_figures.py
 
+.pip_pkgs/
+
 # Generated submission documents (Word, PowerPoint, PDF)
 *.docx
 *.pptx
