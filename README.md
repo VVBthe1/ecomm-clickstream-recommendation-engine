@@ -49,6 +49,18 @@ make api         # FastAPI on :8000
 
 Models: lag-1, 7-day moving average, historical mean, Random Forest, XGBoost, LightGBM. The API serves the best **tree** model from the tuned E_final run (currently Random Forest), even when a baseline wins on MAE.
 
+### Tuned hyperparameters (E_final retrain)
+
+From `metadata/best_params.json` after `make tune` (12 random samples × 3 time-series folds on E_final train):
+
+| Model | Parameters |
+|-------|------------|
+| Random Forest | `n_estimators=100`, `max_depth=15`, `min_samples_leaf=10`, `max_features=0.5` |
+| XGBoost | `n_estimators=300`, `max_depth=8`, `learning_rate=0.05`, `subsample=0.7`, `colsample_bytree=0.7` |
+| LightGBM | `n_estimators=300`, `num_leaves=31`, `learning_rate=0.05`, `subsample=0.7`, `min_child_samples=20` |
+
+Untuned defaults used in `make train` are in `src/training.py` (RF depth 12 / 100 trees; XGB/LGBM 200 trees, depth 8, learning rate 0.1).
+
 ## API
 
 ```bash
