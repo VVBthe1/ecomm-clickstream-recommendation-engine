@@ -14,10 +14,6 @@ data/models/
 # Personal / WIP — not published with the repo
 workspace/
 
-# AI assistant config (local only)
-CLAUDE.md
-.claude/
-
 # Draft LLD figure sources (use committed docs/figures/*.md instead)
 docs/figures/lld_*.md
 
