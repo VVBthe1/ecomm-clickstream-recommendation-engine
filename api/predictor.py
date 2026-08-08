@@ -68,6 +68,8 @@ class DemandPredictor:
                 "product_id": product_id,
                 "date": date,
                 "predicted_purchases_next_day": 0.0,
+                "actual_purchases_next_day": None,
+                "prediction_error": None,
                 "model_used": self.model_name,
                 "features_used": {},
                 "note": "no data for this product/date combination",
@@ -84,10 +86,17 @@ class DemandPredictor:
         else:
             pred = float(features.get("purchases", 0.0))
 
+        actual = None
+        if "purchases_next_day" in row.index and pd.notna(row["purchases_next_day"]):
+            actual = float(row["purchases_next_day"])
+        error = (pred - actual) if actual is not None else None
+
         return {
             "product_id": product_id,
             "date": date,
             "predicted_purchases_next_day": pred,
+            "actual_purchases_next_day": actual,
+            "prediction_error": error,
             "model_used": self.model_name,
             "features_used": features,
             "note": None,
@@ -152,6 +161,18 @@ class DemandPredictor:
                 "rank": i + 1,
                 "product_id": int(row["product_id"]),
                 "predicted_purchases_next_day": float(row["_pred"]),
+                "actual_purchases_next_day": (
+                    float(row["purchases_next_day"])
+                    if "purchases_next_day" in row.index
+                    and pd.notna(row["purchases_next_day"])
+                    else None
+                ),
+                "prediction_error": (
+                    float(row["_pred"]) - float(row["purchases_next_day"])
+                    if "purchases_next_day" in row.index
+                    and pd.notna(row["purchases_next_day"])
+                    else None
+                ),
                 "purchases": float(row["purchases"]) if pd.notna(row["purchases"]) else None,
                 "views": float(row["views"]) if pd.notna(row["views"]) else None,
             }

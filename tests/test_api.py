@@ -52,6 +52,12 @@ def test_predict_known_row_if_available():
         if body.get("note") is None:
             assert isinstance(body["predicted_purchases_next_day"], float)
             assert body["features_used"]
+            assert "actual_purchases_next_day" in body
+            if body["actual_purchases_next_day"] is not None:
+                assert body["prediction_error"] == (
+                    body["predicted_purchases_next_day"]
+                    - body["actual_purchases_next_day"]
+                )
             return
 
 
